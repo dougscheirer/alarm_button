@@ -1,32 +1,32 @@
 #include <CapacitiveSensor.h>
 
-CapacitiveSensor   cs_4_2 = CapacitiveSensor(4, 2);       // 10M resistor between pins 4 & 2, pin 2 is sensor pin, add a wire and or foil if desired
+CapacitiveSensor   capsensor = CapacitiveSensor(4, 2);       // 10M resistor between pins 4 & 2, pin 2 is sensor pin, add a wire and or foil if desired
 
 int BUTTON_DOWN  = 7; // any time the button is pressed, this is HI
 int DOUBLE_CLICK = 8; // if we detect a double-click, HI for 1s
 int LONG_PRESS   = 9; // if we detect a long press (before release), HI for 1s
 
+// 750 is the magic number, adjust based on the material used for the touch
+int TOUCH_THRESHOLD = 750;
+int READ_DELAY      = 30;      // ms
+int LONG_DELAY      = 3000;    // ms
+int DBL_UPCANCEL    = 1000;     // ms
+int DBL_DOWNCANCEL  = 750;     // ms
+int STATE_DURATION  = 1000;   // ms, time to make the LONG_PRESS or DOUBLE_CLICK high
+
 void setup()
 {
   // not sure if this is required
-  cs_4_2.set_CS_AutocaL_Millis(0xFFFFFFFF);     // turn off autocalibrate on channel 1 - just as an example
-  // don't need this
-  Serial.begin(9600);
+  capsensor.set_CS_AutocaL_Millis(0xFFFFFFFF);
+  // don't need this unless debugging
+  // Serial.begin(9600);
+
   // setup output pins
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(BUTTON_DOWN, OUTPUT);
   pinMode(DOUBLE_CLICK, OUTPUT);
   pinMode(LONG_PRESS, OUTPUT);
 }
-
-long startHigh = 0;
-bool on = false;
-long startLow = 0;
-
-// 750 is the magic number, adjust based on the material used for the touch
-int TOUCH_THRESHOLD = 750;
-int READ_DELAY   = 30;      // ms
-int LONG_DELAY   = 3000;    // ms
 
 enum 
 {
@@ -40,7 +40,7 @@ enum
 // detect button down
 bool isButtonDown() 
 {
-  long total =  cs_4_2.capacitiveSensor(READ_DELAY);
+  long total =  capsensor.capacitiveSensor(READ_DELAY);
   return total > TOUCH_THRESHOLD;
 }
 
@@ -76,7 +76,7 @@ int singleOrLong(bool down)
     Serial.print("Long delay: ");
     Serial.println(millis() - up0);
     digitalWrite(LONG_PRESS, HIGH);
-    delay(1000);
+    delay(STATE_DURATION);
     digitalWrite(LONG_PRESS, LOW);
     Serial.println("Long delay over");
     up0 = millis();
@@ -94,11 +94,11 @@ int singleOrDouble(bool down)
     down0 = millis();
     return stateDoubleOrLong;
   }
-  if (up0 - down0 > 1000) 
+  if (up0 - down0 > DBL_UPCANCEL) 
   {
     return stateDefault;
   }
-  if (millis() - up0 > 1000)
+  if (millis() - up0 > DBL_UPCANCEL)
   {
     return stateDefault;
   }
@@ -122,11 +122,11 @@ int doubleOrLong(bool down)
   {
     Serial.println("Double");
     digitalWrite(DOUBLE_CLICK, HIGH);
-    delay(1000);
+    delay(STATE_DURATION);
     digitalWrite(DOUBLE_CLICK, LOW);
     return stateDefault;
   }
-  if (millis() - down0 > 750)
+  if (millis() - down0 > DBL_DOWNCANCEL)
   {
     return stateSingleOrLong;
   }
