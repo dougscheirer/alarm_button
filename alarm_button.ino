@@ -6,13 +6,12 @@ int BUTTON_DOWN  = 7; // any time the button is pressed, this is HI
 int DOUBLE_CLICK = 8; // if we detect a double-click, HI for 1s
 int LONG_PRESS   = 9; // if we detect a long press (before release), HI for 1s
 
-// 750 is the magic number, adjust based on the material used for the touch
-int TOUCH_THRESHOLD = 750;
-int READ_DELAY      = 30;      // ms
-int LONG_DELAY      = 3000;    // ms
-int DBL_UPCANCEL    = 1000;     // ms
-int DBL_DOWNCANCEL  = 750;     // ms
-int STATE_DURATION  = 1000;   // ms, time to make the LONG_PRESS or DOUBLE_CLICK high
+int TOUCH_THRESHOLD = 750;   // 750 is the magic number, adjust based on the material used for the touch
+int READ_DELAY      = 30;    // ms
+int LONG_DELAY      = 3000;  // ms
+int DBL_UPCANCEL    = 1000;  // ms
+int DBL_DOWNCANCEL  = 750;   // ms
+int STATE_DURATION  = 500;   // ms, time to make the LONG_PRESS or DOUBLE_CLICK high
 
 void setup()
 {
@@ -75,6 +74,7 @@ int singleOrLong(bool down)
   {
     Serial.print("Long delay: ");
     Serial.println(millis() - up0);
+    digitalWrite(BUTTON_DOWN, LOW);
     digitalWrite(LONG_PRESS, HIGH);
     delay(STATE_DURATION);
     digitalWrite(LONG_PRESS, LOW);
@@ -121,6 +121,7 @@ int doubleOrLong(bool down)
   if (!down)
   {
     Serial.println("Double");
+    digitalWrite(BUTTON_DOWN, LOW);
     digitalWrite(DOUBLE_CLICK, HIGH);
     delay(STATE_DURATION);
     digitalWrite(DOUBLE_CLICK, LOW);
