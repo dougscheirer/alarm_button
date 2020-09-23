@@ -9,6 +9,7 @@ int LONG_PRESS   = 9; // if we detect a long press (before release), HI for 1s
 int TOUCH_THRESHOLD = 750;   // 750 is the magic number, adjust based on the material used for the touch
 int READ_DELAY      = 30;    // ms
 int LONG_DELAY      = 3000;  // ms
+int UP_DEBOUNCE     = 100;   // ms
 int DBL_DEBOUNCE    = 100;   // ms
 int DBL_UPCANCEL    = 1000;  // ms
 int DBL_DOWNCANCEL  = 750;   // ms
@@ -40,7 +41,7 @@ void setup()
   // not sure if this is required
   capsensor.set_CS_AutocaL_Millis(0xFFFFFFFF);
   // don't need this unless debugging
-  if (debugging) {
+  if (!debugging) {
     Serial.begin(9600);
   }
 
@@ -63,11 +64,29 @@ enum
   stateWaitForQuiet
 };
 
-// detect button down
+// detect button down with debounce
+long lastUpSignal = -1; // -1 is reset, 0 is saw a down, other is time of last up transition
 bool isButtonDown() 
 {
   long total =  capsensor.capacitiveSensor(READ_DELAY);
-  return total > TOUCH_THRESHOLD;
+  if (total > TOUCH_THRESHOLD) {
+    lastUpSignal = 0;
+    return true;
+  }
+  if (lastUpSignal == -1) {
+    return false; // never saw a down
+  }
+  long now = millis();
+  if (lastUpSignal == 0) {
+    // still down until the debounce goes through
+    lastUpSignal = now;
+    return true;
+  }
+  if (now - lastUpSignal > UP_DEBOUNCE) {
+    lastUpSignal = -1;
+    return false;
+  }
+  return true;
 }
 
 // state monitors
